@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT Subtitle Formatter</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+          <line x1="4" y1="22" x2="4" y2="15"/>
+        </svg>
+        <h1>YT Subtitle <span class="accent">Formatter</span></h1>
+      </div>
+      <p class="subtitle">Paste a YouTube link. Get clean, structured markdown.</p>
+    </header>
+
+    <main>
+      <!-- Step 1: URL Input -->
+      <section class="card">
+        <div class="step-badge">1</div>
+        <h2>Fetch Transcript</h2>
+        <div class="input-group">
+          <input type="text" id="url-input" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" spellcheck="false">
+          <button id="fetch-btn" class="btn btn-primary">
+            <span class="btn-text">Fetch</span>
+            <span class="btn-loader hidden"></span>
+          </button>
+        </div>
+        <div id="fetch-error" class="error hidden"></div>
+        <div id="video-info" class="info hidden">
+          <span class="info-dot"></span>
+          <span id="video-info-text"></span>
+        </div>
+      </section>
+
+      <!-- Step 2: Raw Transcript -->
+      <section class="card hidden" id="transcript-section">
+        <div class="step-badge">2</div>
+        <div class="section-header">
+          <h2>Raw Transcript</h2>
+          <span class="badge" id="segment-count"></span>
+        </div>
+        <div class="preview-box" id="raw-preview"></div>
+      </section>
+
+      <!-- Step 3: LLM Settings + Format -->
+      <section class="card hidden" id="format-section">
+        <div class="step-badge">3</div>
+        <h2>Format with AI</h2>
+
+        <button class="settings-toggle" id="settings-toggle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <span>LLM Settings</span>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <div class="settings-panel hidden" id="settings-panel">
+          <div class="field">
+            <label for="base-url">Base URL</label>
+            <input type="text" id="base-url" placeholder="https://openrouter.ai/api/v1" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="api-key">API Key</label>
+            <div class="password-wrapper">
+              <input type="password" id="api-key" placeholder="sk-..." autocomplete="off" spellcheck="false">
+              <button class="eye-btn" id="toggle-key" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="model">Model</label>
+            <input type="text" id="model" placeholder="google/gemma-4-31b-it:free" autocomplete="off" spellcheck="false">
+          </div>
+          <p class="field-hint">Credentials are saved in your browser. Never sent to any server except the LLM provider you configure.</p>
+        </div>
+
+        <button id="format-btn" class="btn btn-accent" disabled>
+          <span class="btn-text">Format with AI</span>
+          <span class="btn-loader hidden"></span>
+        </button>
+        <div id="format-error" class="error hidden"></div>
+      </section>
+
+      <!-- Step 4: Formatted Output -->
+      <section class="card hidden" id="output-section">
+        <div class="step-badge">4</div>
+        <div class="section-header">
+          <h2>Formatted Output</h2>
+          <div class="tab-group">
+            <button class="tab active" data-tab="preview">Preview</button>
+            <button class="tab" data-tab="raw">Raw MD</button>
+          </div>
+        </div>
+        <div class="preview-box" id="formatted-preview"></div>
+        <textarea class="raw-editor hidden" id="raw-editor" spellcheck="false"></textarea>
+
+        <div class="download-bar">
+          <div class="toggle-group">
+            <label class="toggle-label">Include .txt</label>
+            <label class="switch">
+              <input type="checkbox" id="include-txt">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="download-actions">
+            <button id="download-btn" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Subtitles fetched via YouTube transcript API. Formatting by your LLM of choice.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
